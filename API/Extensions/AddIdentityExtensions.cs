@@ -7,35 +7,35 @@ using Persistence;
 
 namespace API.Extensions
 {
-    public static class AddIdentityExtensions
+  public static class AddIdentityExtensions
+  {
+    public static IServiceCollection AddIdentityServices(this IServiceCollection services, IConfiguration config)
     {
-        public static IServiceCollection AddIdentityService(this IServiceCollection services, IConfiguration config)
-        {
-            // Authorization and Authentication
-            services.AddIdentityCore<User>(opt =>
+      // Authorization and Authentication
+      services.AddIdentityCore<User>(opt =>
+      {
+        opt.Password.RequireNonAlphanumeric = false;
+        opt.User.RequireUniqueEmail = true;
+
+      }).AddEntityFrameworkStores<DataContext>();
+
+      var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["TokenKey"]));
+
+      services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+          .AddJwtBearer(opt =>
+          {
+            opt.TokenValidationParameters = new TokenValidationParameters
             {
-                opt.Password.RequireNonAlphanumeric = false;
-                opt.User.RequireUniqueEmail = true;
+              ValidateIssuerSigningKey = true,
+              IssuerSigningKey = key,
+              ValidateIssuer = false,
+              ValidateAudience = false
+            };
+          });
 
-            }).AddEntityFrameworkStores<DataContext>();
+      services.AddScoped<TokenService>();
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["TokenKey"]));
-
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(opt =>
-                {
-                    opt.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = key,
-                        ValidateIssuer = false,
-                        ValidateAudience = false
-                    };
-                });
-
-            services.AddScoped<TokenService>();
-
-            return services;
-        }
+      return services;
     }
+  }
 }
